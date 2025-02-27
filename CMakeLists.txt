@@ -3,4 +3,10 @@ project(MyProject C)
 
 set(CMAKE_C_STANDARD 11)
 
-add_executable(my_program src/main.c src/utils.c)
+add_executable(linuxProc linuxProc.c)
+
+add_custom_target(run
+    COMMAND ./linuxProc
+    DEPENDS linuxProc
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+)
