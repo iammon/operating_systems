@@ -35,6 +35,7 @@
  * and execv. 
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <string.h>
 #include <strings.h>         // strsep()
@@ -64,6 +65,8 @@ void printPrompt();
 void readCommand(char *);
 
 int main(int argc, char *argv[]) {
+    (void)argc;
+    (void)argv;
     int pid;
     int status;
     char cmdLine[MAX_LINE_LEN];
@@ -81,6 +84,49 @@ int main(int argc, char *argv[]) {
             either execute it directly or build a new command structure to
             execute next
         */
+
+        if (command.name == NULL) { // prevent NULL execvp
+            fprintf(stderr, "Error: No command entered\n");
+            continue;
+        }
+
+        // implement "C file1 file2" copy command
+        if (strcmp(command.name, "C") == 0) {
+            // check for correct usage: must have exactly two file arguments
+            if (command.argc != 3) {
+                fprintf(stderr, "Usage: C file1 file2\n");
+                continue;
+            }
+        
+            // open source file (file1) for reading
+            FILE *source = fopen(command.argv[1], "rb");
+            if (source == NULL) {
+                perror("Error opening source file");
+                continue;
+            }
+        
+            // open destination file (file2) for writing
+            FILE *dest = fopen(command.argv[2], "wb");
+            if (dest == NULL) {
+                perror("Error creating destination file");
+                fclose(source); // close the source file before returning
+                continue;
+            }
+        
+            // copy contents from source to destination
+            char buffer[1024];
+            size_t bytesRead;
+            while ((bytesRead = fread(buffer, 1, sizeof(buffer), source)) > 0) {
+                fwrite(buffer, 1, bytesRead, dest);
+            }
+        
+            // close files
+            fclose(source);
+            fclose(dest);
+        
+            printf("File copied successfully: %s -> %s\n", command.argv[1], command.argv[2]);
+            continue;
+        }
 
         /* Create a child process to execute the command */
         if ((pid = fork()) == 0) {
@@ -112,39 +158,40 @@ int main(int argc, char *argv[]) {
 
 // parse user command
 int parseCommand(char *cLine, struct command_t *cmd) {
-    // argument counter
+    if (cLine == NULL) {
+        return 1;
+    }
+
+    for (int i = 0; i < MAX_ARGS; i++) {
+        cmd->argv[i] = NULL;
+    }
+
     int argc = 0;
-
-    // pointer to traverse command line
-    char *clPtr = cLine;
-
+    char *clPtr = cLine; 
     char *token;
 
-    while ((token = strsep(&clPtr, WHITESPACE)) != NULL) {
-        // skip empty token
-        if (*token == '\0') {
+    while (clPtr != NULL && (token = strsep(&clPtr, WHITESPACE)) != NULL) {
+        if (*token == '\0') { 
             continue;
         }
 
-        // prevent segmentation fault error
         if (argc >= MAX_ARGS - 1) {
             fprintf(stderr, "Error: Too many arguments\n");
             return 1;
         }
-        // store token in argv
+
         cmd->argv[argc] = token;
         argc++;
     }
 
-    // make sure argv is NULL terminated
-    cmd->argv[argc] = NULL;
+    if (argc > 0) {
+        cmd->argv[argc] = NULL;
+        cmd->name = cmd->argv[0]; 
+    } else {
+        cmd->name = NULL;
+    }
 
-    // store argument count and command
     cmd->argc = argc;
-    
-    // handle empty input
-    cmd->name = (argc > 0 ? cmd->argv[0] : NULL);
-
     return 1;
 }
 
@@ -163,7 +210,7 @@ void printPrompt() {
     // get current directory
     if (getcwd(promptString, PATH_MAX) != NULL) {
         //print prompt with current directory 
-        printf("linux (hlm21 %s |> ", promptString);
+        printf("linux (hlm21) %s |> ", promptString);
     } else {
         // in case getcwd() fails
         printf("linux (hlm21) |>");
