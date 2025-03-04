@@ -128,6 +128,21 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
+        // implement "D file" delete command
+        if (strcmp(command.name, "D") == 0) {
+            if (command.argc != 2) {
+                fprintf(stderr, "Usage: D file\n");
+                continue;
+            }
+
+            if (remove(command.argv[1]) == 0) {
+                printf("File deleted successfully: %s\n", command.argv[1]);
+            } else {
+                perror("Error deleting file");
+            }
+            continue;
+        }
+
         /* Create a child process to execute the command */
         if ((pid = fork()) == 0) {
             /* Child executing command */
