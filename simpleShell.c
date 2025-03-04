@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <limits.h>
 
 #define MAX_ARGS		64
 #define MAX_ARG_LEN		16
@@ -101,22 +102,36 @@ int main(int argc, char *argv[]) {
   * argv[1], and so on. Each time we add a token to argv[],
   * we increment argc.
   */
+
+// parse user command
 int parseCommand(char *cLine, struct command_t *cmd) {
-    int argc;
-    char **clPtr;
-    /* Initialization */
-    clPtr = &cLine;	/* cLine is the command line */
-    argc = 0;
-    cmd->argv[argc] = (char *) malloc(MAX_ARG_LEN);
-    /* Fill argv[] */
-    while ((cmd->argv[argc] = strsep(clPtr, WHITESPACE)) != NULL) {
-        cmd->argv[++argc] = (char *) malloc(MAX_ARG_LEN);
+    // argument counter
+    int argc = 0;
+
+    // pointer to traverse command line
+    char **clPtr = cLine;
+
+    char *token;
+
+    while ((token = strsep(&clPtr, WHITESPACE)) != NULL) {
+        // skip empty token
+        if (*token == '\0') {
+            continue;
+        }
+        // store token in argv
+        cmd->argv[argc] = token;
+        argc++;
     }
 
-    /* Set the command name and argc */
-    cmd->argc = argc-1;
-    cmd->name = (char *) malloc(sizeof(cmd->argv[0]));
-    strcpy(cmd->name, cmd->argv[0]);
+    // make sure argv is NULL terminated
+    com->argv[argc] = NULL;
+
+    // store argument count and command
+    cmd->argc = argc;
+    
+    // handle empty input
+    cmd->name = (argc > 0 ? cmd->argv[0] : NULL)
+
     return 1;
 }
 
@@ -128,8 +143,18 @@ void printPrompt() {
     /* Build the prompt string to have the machine name,
      * current directory, or other desired information
      */
-    promptString = ...;
-    printf("%s ", promptString);
+    
+    // buffer to store current working directory
+    char promptString;
+    
+    // get current directory
+    if (getcwd(promptString, sizeof(promptString)) != NULL) {
+        //print prompt with current directory 
+        printf("linux (hlm21 %s |> ", promptString);
+    } else {
+        // in case getcwd() fails
+        printf("linux (hlm21) |>");
+    }
 }
 
  void readCommand(char *buffer) {
