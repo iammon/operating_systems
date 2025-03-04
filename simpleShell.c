@@ -38,7 +38,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <limits.h>
+#include <limits.h>          // PATH_MAX
+#include <stdlib.h>          // strsep()
+#include <sys/types.h>       // pid_t
+#include <sys/wait.h>        // wait()
+
+
 
 #define MAX_ARGS		64
 #define MAX_ARG_LEN		16
@@ -109,7 +114,7 @@ int parseCommand(char *cLine, struct command_t *cmd) {
     int argc = 0;
 
     // pointer to traverse command line
-    char **clPtr = cLine;
+    char *clPtr = cLine;
 
     char *token;
 
@@ -130,7 +135,7 @@ int parseCommand(char *cLine, struct command_t *cmd) {
     cmd->argc = argc;
     
     // handle empty input
-    cmd->name = (argc > 0 ? cmd->argv[0] : NULL)
+    cmd->name = (argc > 0 ? cmd->argv[0] : NULL);
 
     return 1;
 }
