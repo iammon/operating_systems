@@ -181,14 +181,14 @@ int main(int argc, char *argv[]) {
         if (strcmp(command.name, "L") == 0) {
             pid_t pid = fork();
 
-            if (pid == 0) { // Child process
-                char *args[] = {"ls", "-l", NULL}; // Run "ls -l"
+            if (pid == 0) { // child process
+                char *args[] = {"ls", "-l", NULL}; // run "ls -l"
                 execvp("ls", args);
-                perror("execvp failed"); // If exec fails
+                perror("execvp failed"); // if exec fails
                 exit(1);
             }
             
-            // Parent process waits for child
+            // parent process waits for child
             wait(NULL);
             continue;
         }
@@ -200,16 +200,16 @@ int main(int argc, char *argv[]) {
                 continue;
             }
 
-            // Fork a new process to open the text editor
+            // fork a new process to open the text editor
             pid_t pid = fork();
 
-            if (pid == 0) { // Child process
+            if (pid == 0) { // child process
                 execlp("nano", "nano", command.argv[1], NULL);
-                perror("execlp failed"); // If exec fails
+                perror("execlp failed"); // if exec fails
                 exit(1);
             }
             
-            // Parent process waits for child
+            // parent process waits for child
             wait(NULL);
             continue;
         }
@@ -221,16 +221,16 @@ int main(int argc, char *argv[]) {
                 continue;
             }
 
-            // Fork a new process to run "more file"
+            // fork a new process to run "more file"
             pid_t pid = fork();
 
-            if (pid == 0) { // Child process
+            if (pid == 0) { // child process
                 execlp("more", "more", command.argv[1], NULL);
-                perror("execlp failed"); // If exec fails
+                perror("execlp failed"); // if exec fails
                 exit(1);
             }
             
-            // Parent process waits for child
+            // parent process waits for child
             wait(NULL);
             continue;
         }
@@ -265,13 +265,13 @@ int main(int argc, char *argv[]) {
                 continue;
             }
 
-            if (pid == 0) { // Child process
-                execvp(command.argv[1], &command.argv[1]); // Execute program
-                perror("execvp failed"); // If execvp fails
+            if (pid == 0) { // child process
+                execvp(command.argv[1], &command.argv[1]); // execute program
+                perror("execvp failed"); // if execvp fails
                 exit(1);
             }
 
-            // Parent process waits for child
+            // parent process waits for child
             wait(NULL);
             continue;
         }
