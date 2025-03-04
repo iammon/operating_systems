@@ -241,6 +241,17 @@ int main(int argc, char *argv[]) {
             exit(0);
         }
 
+        // implement "W" clear screen command
+        if (strcmp(command.name, "W") == 0) {
+            pid_t pid = fork();
+
+            if (pid == 0) { // child process
+                execlp("clear", "clear", NULL);
+                perror("execlp failed");
+                exit(1);
+            }
+        }
+
         /* Create a child process to execute the command */
         if ((pid = fork()) == 0) {
             /* Child executing command */
