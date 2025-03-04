@@ -37,8 +37,10 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>         // strsep()
 #include <unistd.h>
 #include <limits.h>          // PATH_MAX
+#include <linux/limits.h>    // PATH_MAX
 #include <stdlib.h>          // strsep()
 #include <sys/types.h>       // pid_t
 #include <sys/wait.h>        // wait()
@@ -122,6 +124,12 @@ int parseCommand(char *cLine, struct command_t *cmd) {
         // skip empty token
         if (*token == '\0') {
             continue;
+        }
+
+        // prevent segmentation fault error
+        if (argc >= MAX_ARGS - 1) {
+            fprintf(stderr, "Error: Too many arguments\n");
+            return 1;
         }
         // store token in argv
         cmd->argv[argc] = token;
