@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
     char cmdLine[MAX_LINE_LEN];
     struct command_t command;
 
-    while (TRUE) {
+    while (1) {
         printPrompt();
        /* Read the command line and parse it */
         readCommand(cmdLine);
@@ -145,10 +145,10 @@ void printPrompt() {
      */
     
     // buffer to store current working directory
-    char promptString;
+    char promptString[PATH_MAX];
     
     // get current directory
-    if (getcwd(promptString, sizeof(promptString)) != NULL) {
+    if (getcwd(promptString, PATH_MAX) != NULL) {
         //print prompt with current directory 
         printf("linux (hlm21 %s |> ", promptString);
     } else {
