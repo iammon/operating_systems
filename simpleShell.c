@@ -252,6 +252,30 @@ int main(int argc, char *argv[]) {
             }
         }
 
+        // implement X execute command
+        if (strcmp(command.name, "X") == 0) {
+            if (command.argc < 2) {
+                fprintf(stderr, "Usage: X program [arguments]\n");
+                continue;
+            }
+
+            pid_t pid = fork();
+            if (pid < 0) { // Fork failed
+                perror("Fork failed");
+                continue;
+            }
+
+            if (pid == 0) { // Child process
+                execvp(command.argv[1], &command.argv[1]); // Execute program
+                perror("execvp failed"); // If execvp fails
+                exit(1);
+            }
+
+            // Parent process waits for child
+            wait(NULL);
+            continue;
+        }
+
         /* Create a child process to execute the command */
         if ((pid = fork()) == 0) {
             /* Child executing command */
