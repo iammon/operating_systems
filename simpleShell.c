@@ -160,6 +160,23 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
+        // implement "H" help command
+        if (strcmp(command.name, "H") == 0) {
+            printf("\n=== Shell Help Menu ===\n");
+            printf("C file1 file2  - Copy file1 to file2 without deleting file1\n");
+            printf("D file         - Delete the specified file\n");
+            printf("E comment      - Echo a message to the screen\n");
+            printf("H              - Display this help menu\n");
+            printf("L              - List the contents of the current directory\n");
+            printf("M file         - Create a new file and open a text editor\n");
+            printf("P file         - Print the contents of the specified file\n");
+            printf("Q              - Quit the shell\n");
+            printf("W              - Clear the screen\n");
+            printf("X program      - Execute the specified program\n");
+            printf("\n");
+            continue;
+        }
+
         /* Create a child process to execute the command */
         if ((pid = fork()) == 0) {
             /* Child executing command */
