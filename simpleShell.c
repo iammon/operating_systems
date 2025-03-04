@@ -177,6 +177,22 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
+        // implement "L" list directory command
+        if (strcmp(command.name, "L") == 0) {
+            pid_t pid = fork();
+
+            if (pid == 0) { // Child process
+                char *args[] = {"ls", "-l", NULL}; // Run "ls -l"
+                execvp("ls", args);
+                perror("execvp failed"); // If exec fails
+                exit(1);
+            }
+            
+            // Parent process waits for child
+            wait(NULL);
+            continue;
+        }
+
         /* Create a child process to execute the command */
         if ((pid = fork()) == 0) {
             /* Child executing command */
