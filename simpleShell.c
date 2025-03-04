@@ -143,6 +143,23 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
+        // implement "E comment" echo command
+        if (strcmp(command.name, "E") == 0) {
+            if (command.argc == 1) {  // No arguments, just issue a new prompt
+                continue;
+            }
+
+            // Print message, reducing multiple spaces to a single space
+            for (int i = 1; i < command.argc; i++) {
+                printf("%s", command.argv[i]);
+                if (i < command.argc - 1) {
+                    printf(" ");  // Add a space between words
+                }
+            }
+            printf("\n");  // Newline at the end
+            continue;
+        }
+
         /* Create a child process to execute the command */
         if ((pid = fork()) == 0) {
             /* Child executing command */
