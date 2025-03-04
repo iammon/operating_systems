@@ -124,7 +124,7 @@ int parseCommand(char *cLine, struct command_t *cmd) {
     }
 
     // make sure argv is NULL terminated
-    com->argv[argc] = NULL;
+    cmd->argv[argc] = NULL;
 
     // store argument count and command
     cmd->argc = argc;
@@ -163,7 +163,18 @@ void printPrompt() {
      * the buffer. This implementation is greatly simplified,
      * but it does the job.
      */
-    fgets(buffer, 80, stdin);
+    
+    // read line of input from user
+    if (fgets(buffer, 80, stdin) == NULL) {
+        printf("\nError reading input\n");
+        return;
+    }
+
+    // remove newline if exists
+    size_t len = strlen(buffer);
+    if (len > 0 && buffer[len - 1] == '\n') {
+        buffer[len - 1] = '\0';
+    }
 }
 
  /* End printPrompt and readCommand */
