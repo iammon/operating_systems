@@ -235,6 +235,12 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
+        // implement "Q" quit command
+        if (strcmp(command.name, "Q") == 0) {
+            printf("Exiting shell. Goodbye!\n");
+            exit(0);
+        }
+
         /* Create a child process to execute the command */
         if ((pid = fork()) == 0) {
             /* Child executing command */
