@@ -193,6 +193,48 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
+        // implement "M file" create and open a text file
+        if (strcmp(command.name, "M") == 0) {
+            if (command.argc != 2) {
+                fprintf(stderr, "Usage: M file\n");
+                continue;
+            }
+
+            // Fork a new process to open the text editor
+            pid_t pid = fork();
+
+            if (pid == 0) { // Child process
+                execlp("nano", "nano", command.argv[1], NULL);
+                perror("execlp failed"); // If exec fails
+                exit(1);
+            }
+            
+            // Parent process waits for child
+            wait(NULL);
+            continue;
+        }
+
+        // implement "P file" print file content
+        if (strcmp(command.name, "P") == 0) {
+            if (command.argc != 2) {
+                fprintf(stderr, "Usage: P file\n");
+                continue;
+            }
+
+            // Fork a new process to run "more file"
+            pid_t pid = fork();
+
+            if (pid == 0) { // Child process
+                execlp("more", "more", command.argv[1], NULL);
+                perror("execlp failed"); // If exec fails
+                exit(1);
+            }
+            
+            // Parent process waits for child
+            wait(NULL);
+            continue;
+        }
+
         /* Create a child process to execute the command */
         if ((pid = fork()) == 0) {
             /* Child executing command */
