@@ -1,7 +1,10 @@
 // cigSmoker.c
-//
+// Htaw Mon
 // Lab 2
 // Operating Systems Spring 2025
+//
+// To into an executable: gcc -o cigSmoker cigSmoker.c -lpthread
+// To run: ./cigSmoker
 
 #include <pthread.h>
 #include <semaphore.h>
@@ -11,16 +14,35 @@
 #include <stdbool.h>
 #include <time.h>
 
-// semaphores
+// Colors
+#define COLOR_AGENT   "\033[34m"
+#define COLOR_PUSHER  "\033[32m"
+#define COLOR_SMOKER  "\033[33m"
+#define COLOR_DONE    "\033[35m"
+
+// Semaphores
 sem_t agentSem;
 sem_t tobacco, paper, match;
 sem_t tobaccoSem, paperSem, matchSem;
 sem_t mutex;
 
-// ingredient flags
+// Ingredient flags
 bool isTobacco = false, isPaper = false, isMatch = false;
 
-// agent thread
+// Timestamped, color-coded print
+void print_color(const char* color, const char* msg) {
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+
+    time_t now = ts.tv_sec;
+    struct tm* t = localtime(&now);
+    char timebuf[32];
+    strftime(timebuf, sizeof(timebuf), "%H:%M:%S", t);
+
+    printf("%s[%s.%03ld] %s\033[0m\n", color, timebuf, ts.tv_nsec / 1000000, msg);
+}
+
+// Agent thread
 void* agent_func(void* arg) {
     int id = *(int*)arg;
     for (int i = 0; i < 6; i++) {
@@ -29,27 +51,29 @@ void* agent_func(void* arg) {
 
         switch (id) {
             case 0:
-                printf("Agent: placing tobacco and paper\n");
+                print_color(COLOR_AGENT, "Agent: placing tobacco and paper");
                 sem_post(&tobacco);
                 sem_post(&paper);
                 break;
             case 1:
-                printf("Agent: placing paper and match\n");
+                print_color(COLOR_AGENT, "Agent: placing paper and match");
                 sem_post(&paper);
                 sem_post(&match);
                 break;
             case 2:
-                printf("Agent: placing match and tobacco\n");
+                print_color(COLOR_AGENT, "Agent: placing match and tobacco");
                 sem_post(&match);
                 sem_post(&tobacco);
                 break;
         }
     }
-    printf("Agent %d done\n", id);
+    char msg[64];
+    snprintf(msg, sizeof(msg), "Agent %d done", id);
+    print_color(COLOR_DONE, msg);
     return NULL;
 }
 
-// pusher threads
+// Pusher threads
 void* pusher_tobacco(void* arg) {
     for (int i = 0; i < 12; i++) {
         sem_wait(&tobacco);
@@ -65,7 +89,7 @@ void* pusher_tobacco(void* arg) {
         }
         sem_post(&mutex);
     }
-    printf("Pusher (tobacco) done\n");
+    print_color(COLOR_DONE, "Pusher (tobacco) done");
     return NULL;
 }
 
@@ -84,7 +108,7 @@ void* pusher_paper(void* arg) {
         }
         sem_post(&mutex);
     }
-    printf("Pusher (paper) done\n");
+    print_color(COLOR_DONE, "Pusher (paper) done");
     return NULL;
 }
 
@@ -103,47 +127,47 @@ void* pusher_match(void* arg) {
         }
         sem_post(&mutex);
     }
-    printf("Pusher (match) done\n");
+    print_color(COLOR_DONE, "Pusher (match) done");
     return NULL;
 }
 
-// smoker threads
+// Smoker threads
 void* smoker_tobacco(void* arg) {
     for (int i = 0; i < 3; i++) {
-        sem_wait(&paperSem);  // smoker with tobacco waits for paper + match
-        printf("Smoker with tobacco is making a cigarette\n");
+        sem_wait(&paperSem);
+        print_color(COLOR_SMOKER, "Smoker with tobacco is making a cigarette");
         usleep(rand() % 50000);
-        printf("Smoker with tobacco is smoking\n");
+        print_color(COLOR_SMOKER, "Smoker with tobacco is smoking");
         usleep(rand() % 50000);
         sem_post(&agentSem);
     }
-    printf("Smoker with tobacco done\n");
+    print_color(COLOR_DONE, "Smoker with tobacco done");
     return NULL;
 }
 
 void* smoker_paper(void* arg) {
     for (int i = 0; i < 3; i++) {
-        sem_wait(&matchSem);  // smoker with paper waits for match + tobacco
-        printf("Smoker with paper is making a cigarette\n");
+        sem_wait(&matchSem);
+        print_color(COLOR_SMOKER, "Smoker with paper is making a cigarette");
         usleep(rand() % 50000);
-        printf("Smoker with paper is smoking\n");
+        print_color(COLOR_SMOKER, "Smoker with paper is smoking");
         usleep(rand() % 50000);
         sem_post(&agentSem);
     }
-    printf("Smoker with paper done\n");
+    print_color(COLOR_DONE, "Smoker with paper done");
     return NULL;
 }
 
 void* smoker_match(void* arg) {
     for (int i = 0; i < 3; i++) {
-        sem_wait(&tobaccoSem);  // smoker with match waits for tobacco + paper
-        printf("Smoker with match is making a cigarette\n");
+        sem_wait(&tobaccoSem);
+        print_color(COLOR_SMOKER, "Smoker with match is making a cigarette");
         usleep(rand() % 50000);
-        printf("Smoker with match is smoking\n");
+        print_color(COLOR_SMOKER, "Smoker with match is smoking");
         usleep(rand() % 50000);
         sem_post(&agentSem);
     }
-    printf("Smoker with match done\n");
+    print_color(COLOR_DONE, "Smoker with match done");
     return NULL;
 }
 
