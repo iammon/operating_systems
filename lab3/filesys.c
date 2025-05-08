@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
     // Open the floppy image
     FILE* floppy = fopen("floppya.img", "r+");
     if (floppy == NULL) {
-        printf("floppya.img not found\n");
+        printf("Error: floppya.img not found\n");
         return 1;
     }
 
@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
         int totalUsedBytes = 0;
 
         for (int i = 0; i < 512; i += 16) {
-            if (dir[i] == 0x00) break; // end of directory entries
+            if (dir[i] == 0x00) break;
 
             // Extract filename (first 8 bytes)
             char name[9] = {0};
@@ -47,20 +47,17 @@ int main(int argc, char* argv[]) {
                 name[j] = dir[i + j];
             }
 
-            // Extension: .x or .t
+            // Get file type and sector count
             char ext = dir[i + 8];
-            if (ext != 't' && ext != 'x') continue; // skip malformed
-
-            // Get sector count
             int sectors = (unsigned char)dir[i + 10];
-            int sizeInBytes = sectors * 512;
-            totalUsedBytes += sizeInBytes;
+            int size = sectors * 512;
+            totalUsedBytes += size;
 
-            // Print filename.ext and size
-            printf("%s.%c\t%d bytes\n", name, ext, sizeInBytes);
+            // Print in 8.3 format
+            printf("%s.%c\t%d bytes\n", name, ext, size);
         }
 
-        // Calculate free bytes (each 0 in map is a free sector)
+        // Count free sectors
         int freeSectors = 0;
         for (int i = 0; i < 512; i++) {
             if ((unsigned char)map[i] == 0x00)
@@ -70,6 +67,63 @@ int main(int argc, char* argv[]) {
         int totalFreeBytes = freeSectors * 512;
         printf("\nTotal used: %d bytes\n", totalUsedBytes);
         printf("Total free: %d bytes\n", totalFreeBytes);
+    }
+
+    // -----------------------------------------------------
+    // Option P: Print a text file to screen
+    // -----------------------------------------------------
+    else if (strcmp(argv[1], "P") == 0) {
+        if (argc < 3) {
+            printf("Usage: ./filesys P filename\n");
+            fclose(floppy);
+            return 1;
+        }
+
+        char* target = argv[2];
+        int found = 0;
+
+        for (int i = 0; i < 512; i += 16) {
+            if (dir[i] == 0x00) continue;
+
+            // Build filename from dir
+            char name[9] = {0};
+            for (int j = 0; j < 8; j++) {
+                if (dir[i + j] == 0) break;
+                name[j] = dir[i + j];
+            }
+
+            if (strncmp(target, name, 8) == 0) {
+                found = 1;
+
+                if (dir[i + 8] != 't') {
+                    printf("Error: '%s' is not a text file.\n", name);
+                    fclose(floppy);
+                    return 1;
+                }
+
+                int start = (unsigned char)dir[i + 9];
+                int length = (unsigned char)dir[i + 10];
+
+                char buffer[12288];
+                fseek(floppy, 512 * start, SEEK_SET);
+                for (int j = 0; j < length * 512; j++) {
+                    buffer[j] = fgetc(floppy);
+                    if (buffer[j] == 0x00) break;
+                    putchar(buffer[j]);
+                }
+
+                printf("\n");
+                break;
+            }
+        }
+
+        if (!found) {
+            printf("Error: File '%s' not found.\n", argv[2]);
+        }
+    }
+
+    else {
+        printf("Invalid option. Use L, P, M, or D.\n");
     }
 
     /*
@@ -83,3 +137,4 @@ int main(int argc, char* argv[]) {
     fclose(floppy);
     return 0;
 }
+
