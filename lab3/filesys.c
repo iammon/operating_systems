@@ -2,6 +2,7 @@
 //Based on a program by Michael Black, 2007
 //Revised 11.3.2020 O'Neil
 
+
 #include <stdio.h>
 #include <string.h>
 
@@ -122,18 +123,103 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    // -----------------------------------------------------
+    // Option M: Make a new text file (1 sector, 512 bytes)
+    // -----------------------------------------------------
+    else if (strcmp(argv[1], "M") == 0) {
+        if (argc < 3) {
+            printf("Usage: ./filesys M filename\n");
+            fclose(floppy);
+            return 1;
+        }
+
+        char* newName = argv[2];
+        if (strlen(newName) == 0) {
+            printf("Error: Invalid file name.\n");
+            fclose(floppy);
+            return 1;
+        }
+
+        // Step 1: Search directory
+        int dirIndex = -1;
+        for (int i = 0; i < 512; i += 16) {
+            if (dir[i] == 0x00 && dirIndex == -1) {
+                dirIndex = i; // First free slot
+            } else {
+                char existing[9] = {0};
+                for (int j = 0; j < 8 && dir[i + j] != 0; j++)
+                    existing[j] = dir[i + j];
+
+                if (strncmp(newName, existing, 8) == 0) {
+                    printf("Error: Duplicate or invalid file name.\n");
+                    fclose(floppy);
+                    return 1;
+                }
+            }
+        }
+
+        if (dirIndex == -1) {
+            printf("Error: No free directory entries.\n");
+            fclose(floppy);
+            return 1;
+        }
+
+        // Step 2: Find a free sector
+        int sectorIndex = -1;
+        for (int i = 0; i < 512; i++) {
+            if ((unsigned char)map[i] == 0x00) {
+                sectorIndex = i;
+                break;
+            }
+        }
+
+        if (sectorIndex == -1) {
+            printf("Error: Insufficient disk space.\n");
+            fclose(floppy);
+            return 1;
+        }
+
+        // Step 3: Prompt user for content
+        char buffer[512] = {0};
+        printf("Enter file content (max 511 characters):\n");
+        fgets(buffer, 511, stdin); // Safe input with newline
+        buffer[strcspn(buffer, "\n")] = '\0'; // remove newline
+
+        // Step 4: Fill directory entry
+        for (int i = 0; i < 8; i++) {
+            if (i < strlen(newName)) dir[dirIndex + i] = newName[i];
+            else dir[dirIndex + i] = 0x00;
+        }
+
+        dir[dirIndex + 8] = 't';                 // file type
+        dir[dirIndex + 9] = (char)sectorIndex;   // start sector
+        dir[dirIndex + 10] = 1;                  // length (1 sector)
+
+        // Step 5: Mark map and write to disk
+        map[sectorIndex] = (char)0xFF;
+
+        fseek(floppy, 512 * sectorIndex, SEEK_SET);
+        for (int i = 0; i < 512; i++) {
+            fputc(buffer[i], floppy);
+        }
+
+        // Step 6: Write map and dir back
+        fseek(floppy, 512 * 256, SEEK_SET);
+        for (int i = 0; i < 512; i++) fputc(map[i], floppy);
+
+        fseek(floppy, 512 * 257, SEEK_SET);
+        for (int i = 0; i < 512; i++) fputc(dir[i], floppy);
+
+        printf("File '%s.t' created using sector %d.\n", newName, sectorIndex);
+    }
+
+    // -----------------------------------------------------
+    // Catch invalid options
+    // -----------------------------------------------------
     else {
         printf("Invalid option. Use L, P, M, or D.\n");
     }
 
-    /*
-	//write the map and directory back to the floppy image
-    fseek(floppy,512*256,SEEK_SET);
-    for (i=0; i<512; i++) fputc(map[i],floppy);
-
-    fseek(floppy,512*257,SEEK_SET);
-    for (i=0; i<512; i++) fputc(dir[i],floppy);
-    */
     fclose(floppy);
     return 0;
 }
