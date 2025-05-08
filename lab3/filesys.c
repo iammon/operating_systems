@@ -1,3 +1,26 @@
+/ ACADEMIC INTEGRITY PLEDGE
+//
+// - I have not used source code obtained from another student nor
+//   any other unauthorized source, either modified or unmodified.
+//
+// - All source code and documentation used in my program is either
+//   my original work or was derived by me from the source code
+//   published in the textbook for this course or presented in
+//   class.
+//
+// - I have not discussed coding details about this project with
+//   anyone other than my instructor. I understand that I may discuss
+//   the concepts of this program with other students and that another
+//   student may help me debug my program so long as neither of us
+//   writes anything during the discussion or modifies any computer
+//   file during the discussion.
+//
+// - I have violated neither the spirit nor letter of these restrictions.
+//
+//
+//
+// Signed: Htaw Mon Date: 5/08/2025
+
 //filesys.c
 //Based on a program by Michael Black, 2007
 //Revised 11.3.2020 O'Neil
@@ -212,7 +235,60 @@ int main(int argc, char* argv[]) {
 
         printf("File '%s.t' created using sector %d.\n", newName, sectorIndex);
     }
+    
+    // -----------------------------------------------------
+    // Option D: Delete a file from the disk
+    // -----------------------------------------------------
+    else if (strcmp(argv[1], "D") == 0) {
+        if (argc < 3) {
+            printf("Usage: ./filesys D filename\n");
+            fclose(floppy);
+            return 1;
+        }
 
+        char* target = argv[2];
+        int found = 0;
+
+        for (int i = 0; i < 512; i += 16) {
+            if (dir[i] == 0x00) continue;
+
+            // Build filename
+            char name[9] = {0};
+            for (int j = 0; j < 8; j++) {
+                if (dir[i + j] == 0) break;
+                name[j] = dir[i + j];
+            }
+
+            if (strncmp(name, target, 8) == 0) {
+                found = 1;
+
+                int start = (unsigned char)dir[i + 9];
+                int length = (unsigned char)dir[i + 10];
+
+                // Free sectors in map
+                for (int s = 0; s < length; s++) {
+                    map[start + s] = 0x00;
+                }
+
+                // Clear the directory entry
+                dir[i] = 0x00;
+
+                // Write map and dir back
+                fseek(floppy, 512 * 256, SEEK_SET);
+                for (int j = 0; j < 512; j++) fputc(map[j], floppy);
+
+                fseek(floppy, 512 * 257, SEEK_SET);
+                for (int j = 0; j < 512; j++) fputc(dir[j], floppy);
+
+                printf("File '%s' deleted.\n", name);
+                break;
+            }
+        }
+
+        if (!found) {
+            printf("Error: File not found.\n");
+        }
+    }
     // -----------------------------------------------------
     // Catch invalid options
     // -----------------------------------------------------
